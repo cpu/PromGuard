@@ -24,7 +24,7 @@
 
 ## Example Run
 
-[![asciicast](https://asciinema.org/a/SEe6mR41VXF5eqZp17QQuPP25.png)](https://asciinema.org/a/SEe6mR41VXF5eqZp17QQuPP25)
+[![asciicast](https://asciinema.org/a/RUGQCKxe8UAPPAMXtfRXrW33F.png)](https://asciinema.org/a/RUGQCKxe8UAPPAMXtfRXrW33F)
 
 ![Configured Targets](https://binaryparadox.net/d/3b89f9a4-b2f4-4c1e-bfcc-96cf085c4bcb.jpg)
 
@@ -50,19 +50,19 @@ interface: wg0
   listening port: 51820
 
 peer: uJIL7F6e/02Z4byfX2Tl+WRrAu7SXLt6FpP3WBum3U8=
-  endpoint: 139.59.169.103:51820
+  endpoint: 178.62.105.97:51820
   allowed ips: 10.0.0.2/32
   latest handshake: 1 minute, 47 seconds ago
   transfer: 240.56 KiB received, 21.58 KiB sent
 
 peer: oJ0y/SGhq4ebIT1m2Ago4/W4/opkeY9WzKLrxFyxlWw=
-  endpoint: 188.166.217.201:51820
+  endpoint: 128.199.186.30:51820
   allowed ips: 10.0.0.4/32
   latest handshake: 1 minute, 48 seconds ago
   transfer: 242.62 KiB received, 21.58 KiB sent
 
 peer: MOCzYMLelX8uo2WaU/y/xSBRUUphPPoMNl8FymHOGlU=
-  endpoint: 159.89.149.13:51820
+  endpoint: 138.197.207.168:51820
   allowed ips: 10.0.0.3/32
   latest handshake: 1 minute, 49 seconds ago
   transfer: 241.71 KiB received, 21.58 KiB sent
@@ -92,7 +92,7 @@ interface: wg0
   listening port: 51820
 
 peer: TxMVo4TkXvp+Av44qL1TiW1E0m6qhdM48E/L8AxdYj4=
-  endpoint: 165.227.36.153:51820
+  endpoint: 165.227.33.184:51820
   allowed ips: 10.0.0.1/32
   latest handshake: 31 seconds ago
   transfer: 25.50 KiB received, 285.54 KiB sent
