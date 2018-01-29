@@ -11,11 +11,11 @@
 
 1. Create `terraform.tfvars` in the root of the project directory
 1. Inside of `terraform.tfvars` put:
-```
-do_token = "YOUR_DIGITAL_OCEAN_API_KEY_HERE"
-do_ssh_key_file = "PATH_TO_YOUR_SSH_PUBLIC_KEY_HERE"
-do_ssh_key_name = "A_NAME_TO_ADD_YOUR_SSH_PUBLIC_KEY_UNDER_IDK_PICK_ONE"
-```
+    ```
+    do_token = "YOUR_DIGITAL_OCEAN_API_KEY_HERE"
+    do_ssh_key_file = "PATH_TO_YOUR_SSH_PUBLIC_KEY_HERE"
+    do_ssh_key_name = "A_NAME_TO_ADD_YOUR_SSH_PUBLIC_KEY_UNDER_IDK_PICK_ONE"
+    ```
 1. Run `terraform init` to get required plugins
 
 ## Usage
