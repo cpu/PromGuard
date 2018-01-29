@@ -1,15 +1,5 @@
 ---
 
-- name: "Install Python on servers"
-  hosts: all
-  gather_facts: no
-  tasks:
-    - name: "Install Python using raw SSH command to bootstrap"
-      raw: apt update && apt install python -y
-      args:
-        executable: "/bin/bash"
-        warn: no
-
 - name: "Apply roles common to all servers"
   hosts: all
   roles:

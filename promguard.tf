@@ -136,8 +136,8 @@ resource "digitalocean_tag" "promguard_node" {
 }
 
 # Create a single "monitor" droplet in the do_monitor_region
-# A "remote-exec" provisioner is used to ensure SSH access is available before
-# continuing with further provisioning stages.
+# A "remote-exec" provisioner is used to ensure SSH access is available and
+# Python installed before continuing with further provisioning stages.
 resource "digitalocean_droplet" "monitor" {
   name = "promguard-monitor-1"
   region = "${var.do_monitor_region}"
@@ -147,14 +147,18 @@ resource "digitalocean_droplet" "monitor" {
   tags = [ "${digitalocean_tag.promguard.id}", "${digitalocean_tag.promguard_monitor.id}" ]
 
   provisioner "remote-exec" {
-    inline = [ "# Connected!"]
+    inline = [
+      "# Connected!",
+      "apt update",
+      "apt install -y python"
+    ]
   }
 }
 
 # Create node_count separate to-be-monitored nodes, each in a unique region
 # based on the do_node_regions map.
-# A "remote-exec" provisioner is used to ensure SSH access is available before
-# continuing with further provisioning stages.
+# A "remote-exec" provisioner is used to ensure SSH access is available and
+# Python installed before continuing with further provisioning stages.
 resource "digitalocean_droplet" "node" {
   count = "${var.node_count}"
   name = "promguard-node-${count.index + 1}"
@@ -166,6 +170,10 @@ resource "digitalocean_droplet" "node" {
   depends_on = [ "digitalocean_droplet.monitor" ]
 
   provisioner "remote-exec" {
-    inline = [ "# Connected!"]
+    inline = [
+      "# Connected!",
+      "apt update",
+      "apt install -y python"
+    ]
   }
 }
