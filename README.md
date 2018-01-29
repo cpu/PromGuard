@@ -27,3 +27,73 @@
 [![asciicast](https://asciinema.org/a/SEe6mR41VXF5eqZp17QQuPP25.png)](https://asciinema.org/a/SEe6mR41VXF5eqZp17QQuPP25)
 
 ![Configured Targets](https://binaryparadox.net/d/3b89f9a4-b2f4-4c1e-bfcc-96cf085c4bcb.jpg)
+
+Monitor firewall rules:
+```
+root@promguard-monitor-1:~# ufw status
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW       Anywhere                   # OpenSSH
+51820/udp                  ALLOW       Anywhere                   # WireGuard
+22/tcp (v6)                ALLOW       Anywhere (v6)              # OpenSSH
+51820/udp (v6)             ALLOW       Anywhere (v6)              # WireGuard
+```
+
+Monitor WireGuard interface status:
+```
+root@promguard-monitor-1:~# wg
+interface: wg0
+  public key: TxMVo4TkXvp+Av44qL1TiW1E0m6qhdM48E/L8AxdYj4=
+  private key: (hidden)
+  listening port: 51820
+
+peer: uJIL7F6e/02Z4byfX2Tl+WRrAu7SXLt6FpP3WBum3U8=
+  endpoint: 139.59.169.103:51820
+  allowed ips: 10.0.0.2/32
+  latest handshake: 1 minute, 47 seconds ago
+  transfer: 240.56 KiB received, 21.58 KiB sent
+
+peer: oJ0y/SGhq4ebIT1m2Ago4/W4/opkeY9WzKLrxFyxlWw=
+  endpoint: 188.166.217.201:51820
+  allowed ips: 10.0.0.4/32
+  latest handshake: 1 minute, 48 seconds ago
+  transfer: 242.62 KiB received, 21.58 KiB sent
+
+peer: MOCzYMLelX8uo2WaU/y/xSBRUUphPPoMNl8FymHOGlU=
+  endpoint: 159.89.149.13:51820
+  allowed ips: 10.0.0.3/32
+  latest handshake: 1 minute, 49 seconds ago
+  transfer: 241.71 KiB received, 21.58 KiB sent
+```
+
+Example Node Firewall Status:
+
+```
+root@promguard-node-3:~# ufw status
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW       Anywhere                   # OpenSSH
+51820/udp                  ALLOW       Anywhere                   # WireGuard
+10.0.0.4 9100/tcp          ALLOW       10.0.0.1                   # promguard-monitor-1 WireGuard node-exporter scraper
+22/tcp (v6)                ALLOW       Anywhere (v6)              # OpenSSH
+51820/udp (v6)             ALLOW       Anywhere (v6)              # WireGuard
+```
+
+Example Node WireGuard interface status:
+```
+root@promguard-node-3:~# wg
+interface: wg0
+  public key: oJ0y/SGhq4ebIT1m2Ago4/W4/opkeY9WzKLrxFyxlWw=
+  private key: (hidden)
+  listening port: 51820
+
+peer: TxMVo4TkXvp+Av44qL1TiW1E0m6qhdM48E/L8AxdYj4=
+  endpoint: 165.227.36.153:51820
+  allowed ips: 10.0.0.1/32
+  latest handshake: 31 seconds ago
+  transfer: 25.50 KiB received, 285.54 KiB sent
+```
