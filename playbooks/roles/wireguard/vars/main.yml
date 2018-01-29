@@ -1,0 +1,5 @@
+---
+
+wireguard_apt_repo: "ppa:wireguard/wireguard"
+
+wireguard_listen_port: 51820

@@ -1,0 +1,6 @@
+---
+
+node_exporter_version: "0.15.2"
+node_exporter_sha256: "sha256:1ce667467e442d1f7fbfa7de29a8ffc3a7a0c84d24d7c695cc88b29e0752df37"
+node_exporter_download_url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+node_exporter_port: 9100

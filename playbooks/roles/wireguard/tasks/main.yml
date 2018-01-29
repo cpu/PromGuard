@@ -1,0 +1,78 @@
+---
+
+- name: Add WireGuard apt repo
+  apt_repository:
+    repo: "{{ wireguard_apt_repo }}"
+    state: present
+
+- name: Update the apt cache
+  apt:
+    update_cache: yes
+
+- name: Install WireGuard components
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - wireguard-dkms
+    - wireguard-tools
+
+- name: Ensure WireGuard directory exists
+  file:
+    path: "/etc/wireguard"
+    state: directory
+    owner: root
+    group: root
+    mode: 0640
+
+- name: Generate a WireGuard private key
+  shell: "umask 077; wg genkey > /etc/wireguard/wg.priv"
+  args:
+    creates: "/etc/wireguard/wg.priv"
+
+- name: Register the WireGuard private key
+  command: "cat /etc/wireguard/wg.priv"
+  register: wireguard_private_key_cmd
+  changed_when: false
+
+- name: Compute the WireGuard public key
+  shell: "wg pubkey < /etc/wireguard/wg.priv"
+  register: "wireguard_public_key_cmd"
+  changed_when: false
+
+- name: Register the WireGuard public key as a fact
+  set_fact:
+    wireguard_public_key: "{{ wireguard_public_key_cmd.stdout }}"
+
+- name: Write the WireGuard config
+  template:
+    src: "wg0.conf.j2"
+    dest: "/etc/wireguard/wg0.conf"
+    owner: root
+    group: root
+    mode: 0640
+
+- name: Write the wg0 interface config
+  template:
+    src: "60-wireguard.cfg.j2"
+    dest: "/etc/network/interfaces.d/60-wireguard.cfg"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Open a firewall port for WireGuard
+  ufw:
+    direction: in
+    proto: udp
+    port: "{{ wireguard_listen_port }}"
+    rule: allow
+    comment: "WireGuard"
+
+- name: Bring down the wg0 interface
+  command: ifdown wg0
+  # Ignore errors: wg0 might not exist yet
+  ignore_errors: true
+  changed_when: false
+
+- name: Bring up the wg0 interface
+  command: ifup wg0
+  changed_when: false

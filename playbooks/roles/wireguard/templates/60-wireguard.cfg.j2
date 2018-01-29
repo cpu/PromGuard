@@ -1,0 +1,11 @@
+#
+# Wireguard wg0 interface config for {{ ansible_hostname }}
+#
+
+auto wg0
+iface wg0 inet static
+   address {{ wireguard_ip }}/24
+   netmask 255.255.255.0
+   pre-up ip link add dev $IFACE type wireguard
+   pre-up wg setconf $IFACE /etc/wireguard/$IFACE.conf
+   post-down ip link del $IFACE

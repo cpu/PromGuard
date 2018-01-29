@@ -1,0 +1,85 @@
+---
+
+# Include the node-exporter vars to have access to the node_exporter_port var
+- include_vars: "../../node_exporter/vars/main.yml"
+
+- name: Add prometheus user
+  user:
+    name: "prometheus"
+    createhome: no
+    shell: "/bin/false"
+
+- name: Create required prometheus directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+  with_items:
+    - "/etc/prometheus"
+    - "/var/lib/prometheus"
+
+- name: Download the prometheus tar.gz
+  get_url:
+    url: "{{ prometheus_download_url }}"
+    checksum: "{{ prometheus_sha256 }}"
+    dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+
+- name: Unpack the prometheus tar.gz
+  unarchive:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    remote_src: yes
+    dest: "/tmp/"
+    creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64"
+
+- name: Copy the prometheus binaries to /usr/local/bin
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    remote_src: yes
+    dest: "/usr/local/bin/{{ item }}"
+    mode: 0755
+    owner: "prometheus"
+    group: "prometheus"
+  with_items:
+    - "prometheus"
+    - "promtool"
+
+- name: Copy the console libraries to /etc/prometheus
+  command: "cp -r /tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }} /etc/prometheus/{{ item }}"
+  args:
+    creates: "/etc/prometheus/{{ item }}"
+  with_items:
+    - "consoles"
+    - "console_libraries"
+
+- name: Fix permissions on console libraries in /etc/prometheus
+  file:
+    path: "/etc/prometheus/{{ item }}"
+    state: directory
+    mode: 0755
+    owner: "prometheus"
+    group: "prometheus"
+  with_items:
+    - "consoles"
+    - "console_libraries"
+
+- name: Generate the prometheus config file
+  template:
+    src: "prometheus.yml.j2"
+    dest: "/etc/prometheus/prometheus.yml"
+    mode: 0755
+    owner: "prometheus"
+    group: "prometheus"
+  notify: "restart prometheus"
+
+- name: Generate the prometheus systemd service
+  template:
+    src: "prometheus.service.j2"
+    dest: "/etc/systemd/system/prometheus.service"
+    mode: 0755
+
+- name: Enable the prometheus systemd service
+  service:
+    name: prometheus
+    state: started
+    enabled: yes

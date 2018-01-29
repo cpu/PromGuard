@@ -1,0 +1,58 @@
+---
+
+- name: Add node_exporter user
+  user:
+    name: "node_exporter"
+    createhome: no
+    shell: "/bin/false"
+
+- name: Download Prometheus node_exporter tar.gz
+  get_url:
+    url: "{{ node_exporter_download_url }}"
+    checksum: "{{ node_exporter_sha256 }}"
+    dest: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+
+- name: Unpack the node_exporter tar.gz
+  unarchive:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    remote_src: yes
+    dest: "/tmp/"
+    creates: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64"
+
+- name: Copy the node_exporter binary to /usr/local/bin
+  copy:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+    remote_src: yes
+    dest: "/usr/local/bin/node_exporter"
+    mode: 0755
+    owner: "node_exporter"
+    group: "node_exporter"
+
+- name: Generate the node_exporter systemd unit
+  template:
+    src: "node_exporter.service.j2"
+    dest: "/etc/systemd/system/node_exporter.service"
+    mode: 0755
+  notify: restart node_exporter
+
+- name: Enable the node_exporter systemd service
+  service:
+    name: node_exporter
+    enabled: yes
+
+- name: Start the node_exporter systemd service
+  service:
+    name: node_exporter
+    state: started
+
+- name: Open a firewall port for each Monitor's WireGuard IP to access the node_exporter
+  ufw:
+    src: "{{ hostvars[item]['wireguard_ip'] }}"
+    dest: "{{ wireguard_ip }}"
+    direction: in
+    proto: tcp
+    port: "{{ node_exporter_port }}"
+    rule: allow
+    comment: "{{ item }} WireGuard node-exporter scraper"
+  with_items: "{{ hostvars[ansible_hostname]['groups']['monitors'] }}"
+  when: ansible_hostname not in hostvars[ansible_hostname]['groups']['monitors']

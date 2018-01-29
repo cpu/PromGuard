@@ -1,0 +1,28 @@
+#
+# {{ ansible_hostname }} wg0 configuration
+#
+[Interface]
+PrivateKey = {{ wireguard_private_key_cmd.stdout }}
+ListenPort = {{ wireguard_listen_port }}
+
+{% if ansible_hostname not in hostvars[ansible_hostname]['groups']['monitors'] %}
+  {% for item in hostvars[ansible_hostname]['groups']['monitors']: %}
+    # {{ item }} (Monitor)
+    [Peer]
+    Endpoint = {{ hostvars[item]['ansible_default_ipv4']['address'] }}:{{ wireguard_listen_port }}
+    PublicKey = {{ hostvars[item]['wireguard_public_key'] }}
+    AllowedIPs = {{ hostvars[item]['wireguard_ip'] }}
+
+  {% endfor %}
+{% else %}
+  {% for item in hostvars[ansible_hostname]['groups']['all']: %}
+    # {{ item }} (Monitored node)
+    [Peer]
+    Endpoint = {{ hostvars[item]['ansible_default_ipv4']['address'] }}:{{ wireguard_listen_port }}
+    PublicKey = {{ hostvars[item]['wireguard_public_key'] }}
+    AllowedIPs = {{ hostvars[item]['wireguard_ip'] }}
+
+  {% endfor %}
+{% endif %}
+
+
