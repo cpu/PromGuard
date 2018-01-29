@@ -7,7 +7,7 @@ variable "do_ssh_key_name" {
 }
 
 variable "node_count" {
-  default = 2
+  default = 3
 }
 
 variable "do_size" {
@@ -22,8 +22,14 @@ variable "do_monitor_region" {
   default = "tor1"
 }
 
-variable "do_node_region" {
-  default = "lon1"
+variable "do_node_regions" {
+  type = "map"
+
+  default = {
+    "promguard-node-1" = "lon1"
+    "promguard-node-2" = "sfo2"
+    "promguard-node-3" = "sgp1"
+  }
 }
 
 data "template_file" "nodes_ansible" {
@@ -99,7 +105,7 @@ resource "digitalocean_droplet" "node" {
   count = "${var.node_count}"
   image = "${var.do_image}"
   name = "promguard-node-${count.index + 1}"
-  region = "${var.do_node_region}"
+  region = "${var.do_node_regions["promguard-node-${count.index +1 }"]}"
   size = "${var.do_size}"
   ssh_keys = [ "${digitalocean_ssh_key.promguard-ssh.id}" ]
   tags = [ "${digitalocean_tag.promguard.id}", "${digitalocean_tag.promguard_node.id}" ]

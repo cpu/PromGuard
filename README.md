@@ -21,3 +21,9 @@
 ## Usage
 
 1. Run `./run.sh`
+
+## Example Run
+
+[![asciicast](https://asciinema.org/a/SEe6mR41VXF5eqZp17QQuPP25.png)](https://asciinema.org/a/SEe6mR41VXF5eqZp17QQuPP25)
+
+![Configured Targets](https://binaryparadox.net/d/3b89f9a4-b2f4-4c1e-bfcc-96cf085c4bcb.jpg)
