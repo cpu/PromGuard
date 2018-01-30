@@ -1,5 +1,12 @@
 # PromGuard - Authenticated/Encrypted Prometheus stat scraping over WireGuard
 
+1. [Summary](https://github.com/cpu/PromGuard#summary)
+1. [Prerequisites](https://github.com/cpu/PromGuard#prerequisites)
+1. [Initial Setup](https://github.com/cpu/PromGuard#initial-setup)
+1. [Usage](https://github.com/cpu/PromGuard#usage)
+1. [Background](https://github.com/cpu/PromGuard#background)
+1. [Example run](https://github.com/cpu/PromGuard#example-run)
+
 ## Summary
 
 [Prometheus](https://prometheus.io/) doesn't support authentication/encryption
