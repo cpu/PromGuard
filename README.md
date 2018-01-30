@@ -74,6 +74,31 @@ but [others are
 available](https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exporters.md)
 and this approach generalizes to them as well.
 
+### Prometheus Authentication/Authorization/Encryption
+
+[Prometheus' own documentation](https://prometheus.io/docs/operating/security/#authentication-authorisation-encryption)
+is clear and up-front about the fact that "Prometheus and its components do not
+provide any server-side authentication, authorisation or encryption.". Alone,
+the `node_exporter` has no ability to encrypt the metrics data it provides to a
+prometheus scraper, and no way to authenticate that the thing requesting metrics
+data is the prometheus scraper you expect. If your Prometheus server is in
+Toronto and your nodes are spread out around the world this poses a significant
+obstacle to overcome.
+
+The official recommendation is to deploy mutually authenticated TLS with [client
+certificates](https://en.wikipedia.org/wiki/Transport_Layer_Security#Client-authenticated_TLS_handshake),
+using a reverse proxy. I'm certainly [not adverse to
+TLS](https://letsencrypt.org/) but building your own internal PKI, deploying
+a dedicated reverse proxy to each host next to the exporter, and configuring
+the reverse proxy instances, the exporter instances, and Prometheus for
+client authentication is certainly not a walk in the park.
+
+Avoiding the hassle has driven folks to creative (but cumbersome) [SSH based
+solutions](https://miek.nl/2016/february/24/monitoring-with-ssh-and-prometheus/)
+and, more creatively, [tor hidden services](https://ef.gy/secure-prometheus-ssh-hidden-service).
+
+What if there was.... :sparkles: _A better way_ :sparkles:
+
 ### WireGuard
 
 [WireGuard](https://www.wireguard.com/) rules. It's an "extremely
