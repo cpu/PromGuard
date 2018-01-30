@@ -61,6 +61,21 @@ variable "do_node_regions" {
 }
 
 /*
+ * Terraform outputs
+ */
+
+# ansible_inventory is an output for the rendered ansible_inventory template
+output "ansible_inventory" {
+  value = "${data.template_file.ansible_inventory.rendered}"
+}
+
+# monitor_ip is an output for the public IPv4 address of the monitor droplet
+# used for SSH port forwarding
+output "monitor_ip" {
+  value = "${digitalocean_droplet.monitor.ipv4_address}"
+}
+
+/*
  * Template Data Sources
  */
 
@@ -72,6 +87,10 @@ data "template_file" "nodes_ansible" {
   vars {
     name = "promguard-node-${count.index + 1}"
     ansible_host = "ansible_host=${digitalocean_droplet.node.*.ipv4_address[count.index]}"
+    # Each monitor host is given a sequential address in the RFC 1918 10.0.0.0
+    # network using the `cidrhost` function. The node offset is the index
+    # + 2 - this accounts for both zero offset indexing as well as for the
+    # monitor host
     wireguard_ip = "wireguard_ip=${cidrhost("10.0.0.0/24", count.index + 2)}"
   }
 }
@@ -83,6 +102,8 @@ data "template_file" "monitor_ansible" {
   vars {
     name = "promguard-monitor-1"
     ansible_host = "ansible_host=${digitalocean_droplet.monitor.ipv4_address}"
+    # The monitor wireguard_ip is always the first host in the 10.0.0.0 subnet
+    # for this example code.
     wireguard_ip = "wireguard_ip=${cidrhost("10.0.0.0/24", 1)}"
   }
 }
@@ -97,16 +118,10 @@ data "template_file" "ansible_inventory" {
   }
 }
 
-# ansible_inventory is an output for the rendered ansible_inventory template
-output "ansible_inventory" {
-  value = "${data.template_file.ansible_inventory.rendered}"
-}
 
-# monitor_ip is an output for the public IPv4 address of the monitor droplet
-# used for SSH port forwarding
-output "monitor_ip" {
-  value = "${digitalocean_droplet.monitor.ipv4_address}"
-}
+/*
+ * DigitalOcean provider & resources
+ */
 
 # Use DigitalOcean as the provider
 provider "digitalocean" {
