@@ -42,7 +42,63 @@ not valid in Quebec._
 
 ## Background
 
-_*TODO*_ - _Write the background section_
+### Prometheus
+
+[Prometheus](https://prometheus.io/) is "an open-source systems monitoring and
+alerting toolkit originally built at SoundCloud". It provides a slick
+multi-dimensional time series metrics system exposing a powerful query language.
+[LWN](https://lwn.net) recently published a [great introduction to monitoring
+with Prometheus](https://lwn.net/Articles/744410/). Much like the author of the
+article I've recently transitioned my own systems from [Munin
+monitoring](http://munin-monitoring.org/) to Prometheus with great success.
+
+Prometheus is simple and easy to understand. At its core metrics from individual
+services/machines are exposed via HTTP at a `/metrics` URL path. These endpoints
+are often made available by dedicated programs Prometheus calls "exporters".
+Periodically (every 15s by default) the Prometheus server scrapes configured
+metrics endpoints ("targets" in Prometheus parlance), collecting the data into
+the time series database.
+
+Prometheus makes available a first-party
+[`node_exporter`](https://github.com/prometheus/node_exporter) that exposes
+typical system stats (disk space, CPU usage, network interface stats, etc) via
+a `/metrics` endpoint. This repostiory/example only configures this one exporter
+but [others are
+available](https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exporters.md)
+and this approach generalizes to them as well.
+
+### WireGuard
+
+[WireGuard](https://www.wireguard.com/) rules. It's an "extremely
+simple yet fast and modern VPN that utilizes state-of-the-art cryptography". The
+[white paper](https://www.wireguard.com/papers/wireguard.pdf), originally
+published at [NDSS
+2017](https://www.ndss-symposium.org/ndss2017/ndss-2017-programme/wireguard-next-generation-kernel-network-tunnel/)
+goes into exquisite detail on the protocol and the small, easy to audit, and
+performant kernel mode implementation
+
+The tl;dr is that WireGuard lets us create fast, encrypted, authenticated
+links between servers. Its implementation is perfectly suited to writing
+firewall rules and we can easily work with the standard network interface it
+creates. No PKI or certificates required. There's not a single byte of ASN.1 in
+sight. It's enough to bring you to tears.
+
+### WireGuard meets Prometheus
+
+If each target machine and Prometheus server has a WireGuard keypair
+& interface, then we can configure the target exporters to bind only to the
+WireGuard interface. We can also write firewall rules that restrict traffic to
+the exporter such that it must arrive over the WireGuard interface and from
+the Prometheus server's WireGuard peer IP. The end result is a system that only
+allows fully encrypted, fully authenticated access to the exporter stats from
+the minimum number of hosts. It also fails closed! If something goes wrong with
+the WireGuard configuration the exporter will not be internet accessible - rad!
+No extra services, or complex configuration.
+
+### Implementation
+
+* _*TODO* - Brief overview of the Terraform/Ansible implementation and the
+    Prometheus/node-exporter configs_
 
 ## Example Run
 
