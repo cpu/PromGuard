@@ -1,4 +1,22 @@
-# Prometheus stat scraping over WireGuard
+# PromGuard - Authenticated/Encrypted Prometheus stat scraping over WireGuard
+
+## Summary
+
+[Prometheus](https://prometheus.io/) doesn't support authentication/encryption
+out of box. Scraping metrics over the capital I internet without is a no-go.
+Putting mutually authenticated TLS in front is a hassle.
+
+[WireGuard](http://wireguard.com/) is a next-generation VPN technology likely to
+be part of the mainline Linux kernel Soon(TM). It is: simple, fast, effective.
+
+Can we configure Prometheus to scrape stats over WireGuard? Of course. This is
+a repository showing an example of this approach using
+[Terraform](https://www.terraform.io/) and [Ansible](http://ansible.com/) so
+you can easily try it yourself with as little as _one command*_.
+
+`*` - _Not counting installing Terraform & Ansible, and configuring
+a DigitalOcean API token! Some limitations apply, batteries not included, offer
+not valid in Quebec._
 
 ## Prerequisites
 
@@ -22,15 +40,34 @@
 
 1. Run `./run.sh`
 
+## Background
+
+_*TODO*_ - _Write the background section_
+
 ## Example Run
+
+* An example `./run.sh` invocation recorded with `asciinema`. The IP addresses
+  referred to elsewhere in this README match up with this recording.
 
 [![asciicast](https://asciinema.org/a/RUGQCKxe8UAPPAMXtfRXrW33F.png)](https://asciinema.org/a/RUGQCKxe8UAPPAMXtfRXrW33F)
 
+* A small diagram of the resulting infrastructure. One monitor node
+  (`promguard-monitor-1`) located in Toronto is configured with a WireGuard
+  tunnel to three nodes to be monitored (`promguard-node-1` in London,
+  `promguard-node-2` in San Francisco, and `promguard-node-3` in Singapore):
+
 ![Network Diagram](https://raw.githubusercontent.com/cpu/promguard/master/PromGuard.Network.Diagram.png)
+
+* Here's what the Prometheus targets interface looks like accessed over a SSH
+  port forward to the monitor host. Each target is specified by a WireGuard
+  address (`10.0.0.x`):
 
 ![Configured Targets](https://binaryparadox.net/d/3b89f9a4-b2f4-4c1e-bfcc-96cf085c4bcb.jpg)
 
-Monitor firewall rules:
+* The monitor host's (`promguard-monitor-1`) firewall is very simple. Nothing
+  but SSH and WireGuard here! Strictly speaking this node doesn't even need to
+  expose WireGuard since it only connects outbound to the monitored nodes.
+
 ```
 root@promguard-monitor-1:~# ufw status
 Status: active
@@ -43,7 +80,10 @@ To                         Action      From
 51820/udp (v6)             ALLOW       Anywhere (v6)              # WireGuard
 ```
 
-Monitor WireGuard interface status:
+* Here's what the monitor host's (`promguard-monitor-1`) `wg0` interface status
+  looks like. It has one peer configured for each of the nodes (`10.0.0.2`,
+  `10.0.0.3`, and `10.0.0.4`):
+
 ```
 root@promguard-monitor-1:~# wg
 interface: wg0
@@ -70,7 +110,9 @@ peer: MOCzYMLelX8uo2WaU/y/xSBRUUphPPoMNl8FymHOGlU=
   transfer: 241.71 KiB received, 21.58 KiB sent
 ```
 
-Example Node Firewall Status:
+* Here's what an example node's (`promguard-node-3`) firewall looks like. It
+  only allows access to the `node_exporter` port (`9100`) over the WireGuard
+  interface, and only for the monitor node's source IP (`10.0.0.1`):
 
 ```
 root@promguard-node-3:~# ufw status
@@ -85,7 +127,9 @@ To                         Action      From
 51820/udp (v6)             ALLOW       Anywhere (v6)              # WireGuard
 ```
 
-Example Node WireGuard interface status:
+* An example node's (`promguard-node-3` again) `wg0` interface shows only one
+  peer, the monitor host:
+
 ```
 root@promguard-node-3:~# wg
 interface: wg0
