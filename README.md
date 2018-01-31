@@ -129,8 +129,55 @@ No extra services, or complex configuration.
 
 ### Implementation
 
-* _*TODO* - Brief overview of the Terraform/Ansible implementation and the
-    Prometheus/node-exporter configs_
+Initially I was going to write this as a blog post, but talk is cheap! Running
+code is much better.
+
+#### Terraform
+
+The Terraform config in
+[`promguard.tf`](https://github.com/cpu/PromGuard/blob/master/promguard.tf)
+has three main responsibilities:
+
+1. Creating 1 monitor droplet and 3 to-be-monitored node droplets
+1. Generating an Ansible inventory
+1. Assigning WireGuard IPs to each droplet
+
+There isn't anything especially fancy about item 1. The [`monitor`
+droplet](https://github.com/cpu/PromGuard/blob/af52c13d83367f0f049cbb29b5dc73c91270ad93/promguard.tf#L153:L171)
+and the `${var.node_count}` individual [`node`
+droplets](https://github.com/cpu/PromGuard/blob/af52c13d83367f0f049cbb29b5dc73c91270ad93/promguard.tf#L173:L194)
+both use a `remote-exec` provisioner. This ensures the droplets have SSH
+available before continuing and also bootstraps the droplets with Python so that
+Ansible playbooks can be run.
+
+The [Ansible
+inventory](http://docs.ansible.com/ansible/latest/intro_inventory.html) is
+generated in three parts. First, for [each to-be-monitored
+node](https://github.com/cpu/PromGuard/blob/af52c13d83367f0f049cbb29b5dc73c91270ad93/templates/hostname.tpl),
+a inventory line is
+[templated](https://github.com/cpu/PromGuard/blob/af52c13d83367f0f049cbb29b5dc73c91270ad93/templates/hostname.tpl). The end result is a line of the form: `<node name> ansible_host=<node IPv4 address> wireguard_ip=<node wireguard
+address>`. An inventory line is [for the monitor
+node](https://github.com/cpu/PromGuard/blob/af52c13d83367f0f049cbb29b5dc73c91270ad93/promguard.tf#L98:L109) is generated the same way. Lastly another [template](https://github.com/cpu/PromGuard/blob/af52c13d83367f0f049cbb29b5dc73c91270ad93/templates/inventory.tpl) is used to [stitch together the node and monitor inventory lines](https://github.com/cpu/PromGuard/blob/af52c13d83367f0f049cbb29b5dc73c91270ad93/promguard.tf#L111:L119).
+
+When generating the inventory line each server is given a WireGuard IP in the
+`10.0.0.0` RFC1918 reserved network.
+To make life easy [the monitor is always the first
+address](https://github.com/cpu/PromGuard/blob/af52c13d83367f0f049cbb29b5dc73c91270ad93/promguard.tf#L105:L107),
+`10.0.0.1`. The nodes are [assigned sequential
+addresses](https://github.com/cpu/PromGuard/blob/af52c13d83367f0f049cbb29b5dc73c91270ad93/promguard.tf#L90:PL94)
+starting at `10.0.0.2`.
+
+#### Ansible
+
+TODO(@cpu): Write this
+
+#### Node Exporter
+
+TODO(@cpu): Write this
+
+#### Prometheus
+
+TODO(@cpu): Write this
 
 ## Example Run
 
