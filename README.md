@@ -178,8 +178,7 @@ There are four main Ansible playbooks at work:
    playbook](https://github.com/cpu/PromGuard/tree/367f334819b6ba4c6a323e3bbec76b934f93b7c7/playbooks/roles/ufw/tasks)
 1. The [WireGuard
    playbook](https://github.com/cpu/PromGuard/tree/367f334819b6ba4c6a323e3bbec76b934f93b7c7/playbooks/roles/wireguard)
-1. The [Node Exporter
-   playbook](https://github.com/cpu/PromGuard/tree/367f334819b6ba4c6a323e3bbec76b934f93b7c7/playbooks/roles/node_exporter_
+1. The [Node Exporter playbook](https://github.com/cpu/PromGuard/tree/367f334819b6ba4c6a323e3bbec76b934f93b7c7/playbooks/roles/node_exporter)
 1. The [Prometheus server
    playbook](https://github.com/cpu/PromGuard/tree/367f334819b6ba4c6a323e3bbec76b934f93b7c7/playbooks/roles/prometheus-servera)
 
@@ -193,14 +192,14 @@ private
 key](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L27:L30).
 The public key is [derived from the private key](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L37:L40) and registered as an Ansible fact [for
 that
-host](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L42:L44). This makes it easy to refer to a server's WireGuard public key from templates and tasks.
+host](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L42:L44). This makes it easy to refer to a server's WireGuard public key from templates and tasks. Each private key is only known by the server it belongs to and the host running the Ansible playbooks.
 
 Beyond installing WireGuard and computing keys the WireGuard playbook also
 writes a [WireGuard config
 file](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L46:L52), and a [network interface config
 file](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L54:L60).
 
-The WireGuard config file (`/etc/wireguard/wg0.conf`) for each host is written from a template that [declares an `[Interface]`](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/wg0.conf.j2#L4:L6) and the required `[Peer]` entries. The `[Peer]` config differs based on whether the host is a monitor, needing [one `[Peer]` for every server](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/wg0.conf.j2#L19:L23), or if it is a monitored server, only [one `[Peer]` for the monitor](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/wg0.conf.j2#L10:L14). In both cases the `PublicKey` and `AllowedIPs` for each peer are populated using Ansible facts and the inventory.
+The WireGuard config file (`/etc/wireguard/wg0.conf`) for each host is written from a template that [declares an `[Interface]`](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/wg0.conf.j2#L4:L6) and the required `[Peer]` entries. The `[Peer]` config differs based on whether the host is a monitor, needing [one `[Peer]` for every server](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/wg0.conf.j2#L19:L23), or if it is a monitored server needing only [one `[Peer]` for the monitor](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/wg0.conf.j2#L10:L14). In both cases the `PublicKey` and `AllowedIPs` for each peer are populated using Ansible facts and the inventory.
 
 The network interface config file (`/etc/network/interfaces.d/60-wireguard.cfg.j2`) for each host is written from a template that [configures a `wg0` network `iface`](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/60-wireguard.cfg.j2#L6:L11). The `address` is populated based on the server's `wireguard_ip` assigned in the Ansible inventory. The `pre-up` statements configure the interface as a WireGuard type interface that should use the `/etc/wireguard/wg0.conf` file the WireGuard role creates.
 
@@ -253,6 +252,18 @@ over the monitor server's WireGuard link to each target server. The target
 servers `node_exporter` is configured to listen on the WireGuard interface and
 the firewall has a rule in place to allow the monitor to access the
 `node_exporter`.
+
+## Conclusion
+
+Phew! That's a lot of text. Thanks for sticking it out. I hope this was a useful
+example/resource.
+
+While this Terraform/Ansible code is just a demo, and specific to
+Prometheus/Node Exporter the idea and much of the code is transferrable to other
+scenarios where you need to offer a service to a trusted set of hosts in an
+encrypted/authenticated setting or want to use Terraform and Ansible together.
+Feel free to fork & adapt. Definitely let me know if you use this as a starting
+point for another fun WireGuard project :-)
 
 ## Example Run
 
