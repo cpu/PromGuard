@@ -6,6 +6,7 @@
 1. [Usage](https://github.com/cpu/PromGuard#usage)
 1. [Background](https://github.com/cpu/PromGuard#background)
 1. [Implementation](https://github.com/cpu/PromGuard#implementation)
+1. [Conclusion](https://github.com/cpu/PromGuard#conclusion)
 1. [Example run](https://github.com/cpu/PromGuard#example-run)
 
 ## Summary
