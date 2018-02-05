@@ -26,7 +26,7 @@ you can easily try it yourself with as little as _one command*_.
 a DigitalOcean API token! Some limitations apply, batteries not included, offer
 not valid in Quebec._
 
-## Prerequisites
+## Demo Prerequisites
 
 1. [Install Ansible](http://docs.ansible.com/ansible/latest/intro_installation.html)
 1. [Install Terraform](https://www.terraform.io/intro/getting-started/install.html)
@@ -44,9 +44,11 @@ not valid in Quebec._
     ```
 1. Run `terraform init` to get required plugins
 
-## Usage
+## Demo Usage
 
 1. Run `./run.sh`
+1. Follow the instructions at completion to access Prometheus interface on the
+   monitoring host.
 
 ## Background
 
@@ -79,7 +81,7 @@ and this approach generalizes to them as well.
 
 [Prometheus' own documentation](https://prometheus.io/docs/operating/security/#authentication-authorisation-encryption)
 is clear and up-front about the fact that "Prometheus and its components do not
-provide any server-side authentication, authorisation or encryption.". Alone,
+provide any server-side authentication, authorisation or encryption". Alone,
 the `node_exporter` has no ability to encrypt the metrics data it provides to a
 prometheus scraper, and no way to authenticate that the thing requesting metrics
 data is the prometheus scraper you expect. If your Prometheus server is in
@@ -131,7 +133,8 @@ No extra services, or complex configuration.
 ### Implementation
 
 Initially I was going to write this as a blog post, but talk is cheap! Running
-code is much better.
+code is much better. Using Terraform and Ansible makes this a reproducable
+demonstration of the idea.
 
 #### Terraform
 
@@ -170,15 +173,86 @@ starting at `10.0.0.2`.
 
 #### Ansible
 
-TODO(@cpu): Write this
+There are four main Ansible playbooks at work:
+1. The [UFW
+   playbook](https://github.com/cpu/PromGuard/tree/367f334819b6ba4c6a323e3bbec76b934f93b7c7/playbooks/roles/ufw/tasks)
+1. The [WireGuard
+   playbook](https://github.com/cpu/PromGuard/tree/367f334819b6ba4c6a323e3bbec76b934f93b7c7/playbooks/roles/wireguard)
+1. The [Node Exporter
+   playbook](https://github.com/cpu/PromGuard/tree/367f334819b6ba4c6a323e3bbec76b934f93b7c7/playbooks/roles/node_exporter_
+1. The [Prometheus server
+   playbook](https://github.com/cpu/PromGuard/tree/367f334819b6ba4c6a323e3bbec76b934f93b7c7/playbooks/roles/prometheus-servera)
+
+The UFW playbook is very straight-forward. It [installs
+UFW](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/ufw/tasks/main.yml#L3:L5), allows [inbound TCP on port 22](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/ufw/tasks/main.yml#L7:L12) for SSH, and [enables UFW at boot](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/ufw/tasks/main.yml#L14:L18) with a default deny inbound policy.
+
+The WireGuard playbook [installs `wireguard-dkms` and
+`wireguard-tools`](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L3:L17)
+after setting up the Ubuntu PPA. Each server [generates its own WireGuard
+private
+key](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L27:L30).
+The public key is [derived from the private key](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L37:L40) and registered as an Ansible fact [for
+that
+host](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L42:L44). This makes it easy to refer to a server's WireGuard public key from templates and tasks.
+
+Beyond installing WireGuard and computing keys the WireGuard playbook also
+writes a [WireGuard config
+file](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L46:L52), and a [network interface config
+file](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/tasks/main.yml#L54:L60).
+
+The WireGuard config file (`/etc/wireguard/wg0.conf`) for each host is written from a template that [declares an `[Interface]`](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/wg0.conf.j2#L4:L6) and the required `[Peer]` entries. The `[Peer]` config differs based on whether the host is a monitor, needing [one `[Peer]` for every server](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/wg0.conf.j2#L19:L23), or if it is a monitored server, only [one `[Peer]` for the monitor](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/wg0.conf.j2#L10:L14). In both cases the `PublicKey` and `AllowedIPs` for each peer are populated using Ansible facts and the inventory.
+
+The network interface config file (`/etc/network/interfaces.d/60-wireguard.cfg.j2`) for each host is written from a template that [configures a `wg0` network `iface`](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/wireguard/templates/60-wireguard.cfg.j2#L6:L11). The `address` is populated based on the server's `wireguard_ip` assigned in the Ansible inventory. The `pre-up` statements configure the interface as a WireGuard type interface that should use the `/etc/wireguard/wg0.conf` file the WireGuard role creates.
+
+This gives us a `wg0` interface on each server, configured with the right
+IP/keypair, and ready with peer configuration based on the server's role.
 
 #### Node Exporter
 
-TODO(@cpu): Write this
+The `node_exporter` role is pretty simple. The [majority of the
+tasks](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/node_exporter/tasks/main.yml#L3:L46)
+are for setting up a dedicated user, downloading the exporter code, unpacking
+it, and making sure it runs on start with a systemd unit.
+
+Notably [the systemd unit
+template](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/node_exporter/templates/node_exporter.service.j2)
+makes sure the `ExecStart` line [passes
+`--web.listen-address`](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/node_exporter/templates/node_exporter.service.j2#L11)
+to restrict the `node_exporter` to listening on the `wireguard_ip` (e.g. on
+`wg0`). By default it will listen on `127.0.0.1` and we only want it to be
+accessible over WireGuard instead.
+
+The `node_exporter` role also [adds a new firewall
+rule](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/node_exporter/tasks/main.yml#L48:L58)
+for all of the to-be-monitored servers. This rule allows TCP traffic to the
+`node_exporter` port destined to the `wireguard_ip` from the [monitor's
+`wireguard_ip`](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/node_exporter/tasks/main.yml#L50).
+
+The end result is that every to-be-monitored server has a `node_exporter` that
+can only be accessed over WireGuard, and only by the monitor server. The monitor
+server isn't able to access any other ports/services and the metrics data will
+always be encrypted while it travels between the server and the monitor.
 
 #### Prometheus
 
-TODO(@cpu): Write this
+Like the `node_exporter` role the [bulk of the
+tasks](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/prometheus-server/tasks/main.yml)
+in the Prometheus role are for adding a dedicated user, downloading Prometheus,
+installing it, and making sure it has a systemd unit.
+
+The main point of interest is the
+[`prometheus.yml.j2`](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/prometheus-server/templates/prometheus.yml.j2)
+template that is used to write the Prometheus server yaml config file on the
+monitor server.
+
+For every server in the inventory a [target scrape job is
+written](https://github.com/cpu/PromGuard/blob/901e88d145f8dc971822546a130f685bb5035ce7/playbooks/roles/prometheus-server/templates/prometheus.yml.j2#L10:L12). The `targets` IP is the `wireguard_ip` of each server, ensuring the stat collection is done over WireGuard.
+
+The end result is that Prometheus is configured to scrape stats for each server,
+over the monitor server's WireGuard link to each target server. The target
+servers `node_exporter` is configured to listen on the WireGuard interface and
+the firewall has a rule in place to allow the monitor to access the
+`node_exporter`.
 
 ## Example Run
 
